@@ -1,0 +1,36 @@
+<script type="text/javascript">
+    $().ready(function(){
+        var csrf = "{% csrf_token %}";
+        var current_view = "{{ current_view }}";
+        var post_url = "{{ post_url }}";
+        var get_url = "{{ get_url }}?";
+        var view_form = $('<form action="' + post_url + '"></form>');
+        view_form.append($(csrf));
+        view_form.append($('<input type="hidden" name="current_page" value="' + current_view + '" />'));
+        $("body").append(view_form);
+
+        if (typeof(toesaver_debug) == "undefined")
+            var toesaver_debug = false;
+
+        function post_viewer(){
+            $.post(post_url, view_form.serializeArray(), function(response){
+                if (toesaver_debug)
+                    console.log("Successfully reported viewer.")
+                poll_viewers();
+            });
+        }
+
+        function poll_viewers(){
+            $.get(get_url + view_form.serialize(), function(response){
+                if (toesaver_debug)
+                    console.log("Polled user list:", response);
+                toesaver_poll_callback(response);
+
+            }, 'json');
+        }
+
+        post_viewer();
+        setInterval(post_viewer, {{ view_timeout }});
+        setInterval(poll_viewers, {{ poll_frequency }});
+    });
+</script>
